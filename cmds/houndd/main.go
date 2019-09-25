@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"flag"
 	"log"
-	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -13,10 +12,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/hound-search/hound/api"
 	"github.com/hound-search/hound/config"
 	"github.com/hound-search/hound/searcher"
-	"github.com/hound-search/hound/ui"
 	"github.com/hound-search/hound/web"
 )
 
@@ -96,6 +93,7 @@ func makeTemplateData(cfg *config.Config) (interface{}, error) {
 	return &data, nil
 }
 
+/*
 func runHttp(
 	addr string,
 	dev bool,
@@ -109,16 +107,17 @@ func runHttp(
 	}
 
 	m.Handle("/", h)
-	api.Setup(m, idx)
+	api.Setup(m, idx, )
 	return http.ListenAndServe(addr, m)
 }
+*/
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	info_log = log.New(os.Stdout, "", log.LstdFlags)
 	error_log = log.New(os.Stderr, "", log.LstdFlags)
 
-	flagConf := flag.String("conf", "config.json", "")
+	flagConf := flag.String("conf", "/Users/vzteufem/go/go-prj/bin/config.json", "")
 	flagAddr := flag.String("addr", ":6080", "")
 	flagDev := flag.Bool("dev", false, "")
 
@@ -167,5 +166,5 @@ func main() {
 	info_log.Printf("running server at http://%s...\n", host)
 
 	// Fully enable the web server now that we have indexes
-	panic(ws.ServeWithIndex(idx))
+	panic(ws.ServeWithIndex(idx, cfg))
 }

@@ -159,7 +159,7 @@ func parseRangeValue(rv string) (int, int) {
 	return b, e
 }
 
-func Setup(m *http.ServeMux, idx map[string]*searcher.Searcher) {
+func Setup(m *http.ServeMux, idx map[string]*searcher.Searcher, cfg config.Config) {
 
 	m.HandleFunc("/api/v1/repos", func(w http.ResponseWriter, r *http.Request) {
 		res := map[string]*config.Repo{}
@@ -168,6 +168,10 @@ func Setup(m *http.ServeMux, idx map[string]*searcher.Searcher) {
 		}
 
 		writeResp(w, res)
+	})
+
+	m.HandleFunc("/api/v1/config", func(w http.ResponseWriter, r *http.Request) {
+		writeResp(w, cfg)
 	})
 
 	m.HandleFunc("/api/v1/search", func(w http.ResponseWriter, r *http.Request) {

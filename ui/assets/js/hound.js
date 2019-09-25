@@ -1,19 +1,21 @@
-import {UrlToRepo} from './common';
+import { UrlToRepo } from './common';
+import Prism from './prism.js';
 
-var Signal = function() {
+var Signal = function () {
 };
 
-Signal.prototype = {
-  listeners : [],
 
-  tap: function(l) {
+Signal.prototype = {
+  listeners: [],
+
+  tap: function (l) {
     // Make a copy of the listeners to avoid the all too common
     // subscribe-during-dispatch problem
     this.listeners = this.listeners.slice(0);
     this.listeners.push(l);
   },
 
-  untap: function(l) {
+  untap: function (l) {
     var ix = this.listeners.indexOf(l);
     if (ix == -1) {
       return;
@@ -25,21 +27,21 @@ Signal.prototype = {
     this.listeners.splice(ix, 1);
   },
 
-  raise: function() {
+  raise: function () {
     var args = Array.prototype.slice.call(arguments, 0);
-    this.listeners.forEach(function(l) {
+    this.listeners.forEach(function (l) {
       l.apply(this, args);
     });
   }
 };
 
-var css = function(el, n, v) {
+var css = function (el, n, v) {
   el.style.setProperty(n, v, '');
 };
 
-var FormatNumber = function(t) {
-  var s = '' + (t|0),
-      b = [];
+var FormatNumber = function (t) {
+  var s = '' + (t | 0),
+    b = [];
   while (s.length > 0) {
     b.unshift(s.substring(s.length - 3, s.length));
     s = s.substring(0, s.length - 3);
@@ -47,14 +49,14 @@ var FormatNumber = function(t) {
   return b.join(',');
 };
 
-var ParamsFromQueryString = function(qs, params) {
+var ParamsFromQueryString = function (qs, params) {
   params = params || {};
 
   if (!qs) {
     return params;
   }
 
-  qs.substring(1).split('&').forEach(function(v) {
+  qs.substring(1).split('&').forEach(function (v) {
     var pair = v.split('=');
     if (pair.length != 2) {
       return;
@@ -71,7 +73,7 @@ var ParamsFromQueryString = function(qs, params) {
   return params;
 };
 
-var ParamsFromUrl = function(params) {
+var ParamsFromUrl = function (params) {
   params = params || {
     q: '',
     i: 'nope',
@@ -81,7 +83,7 @@ var ParamsFromUrl = function(params) {
   return ParamsFromQueryString(location.search, params);
 };
 
-var ParamValueToBool = function(v) {
+var ParamValueToBool = function (v) {
   v = v.toLowerCase();
   return v == 'fosho' || v == 'true' || v == '1';
 };
@@ -103,25 +105,25 @@ var Model = {
 
   didError: new Signal(),
 
-  didLoadRepos : new Signal(),
+  didLoadRepos: new Signal(),
 
-  ValidRepos: function(repos) {
+  ValidRepos: function (repos) {
     var all = this.repos,
-        seen = {};
-    return repos.filter(function(repo) {
+      seen = {};
+    return repos.filter(function (repo) {
       var valid = all[repo] && !seen[repo];
       seen[repo] = true;
       return valid;
     });
   },
 
-  RepoCount: function() {
+  RepoCount: function () {
     return Object.keys(this.repos).length;
   },
 
-  Load: function() {
+  Load: function () {
     var _this = this;
-    var next = function() {
+    var next = function () {
       var params = ParamsFromUrl();
       _this.didLoadRepos.raise(_this, _this.repos);
 
@@ -132,7 +134,7 @@ var Model = {
 
     if (typeof ModelData != 'undefined') {
       var data = JSON.parse(ModelData),
-          repos = {};
+        repos = {};
       for (var name in data) {
         repos[name] = data[name];
       }
@@ -144,21 +146,21 @@ var Model = {
     $.ajax({
       url: 'api/v1/repos',
       dataType: 'json',
-      success: function(data) {
+      success: function (data) {
         _this.repos = data;
         next();
       },
-      error: function(xhr, status, err) {
+      error: function (xhr, status, err) {
         // TODO(knorton): Fix these
         console.error(err);
       }
     });
   },
 
-  Search: function(params) {
+  Search: function (params) {
     this.willSearch.raise(this, params);
     var _this = this,
-        startedAt = Date.now();
+      startedAt = Date.now();
 
     params = $.extend({
       stats: 'fosho',
@@ -188,15 +190,15 @@ var Model = {
       data: params,
       type: 'GET',
       dataType: 'json',
-      success: function(data) {
+      success: function (data) {
         if (data.Error) {
           _this.didError.raise(_this, data.Error);
           return;
         }
 
         var matches = data.Results,
-            stats = data.Stats,
-            results = [];
+          stats = data.Stats,
+          results = [];
         for (var repo in matches) {
           if (!matches[repo]) {
             continue;
@@ -211,12 +213,12 @@ var Model = {
           });
         }
 
-        results.sort(function(a, b) {
+        results.sort(function (a, b) {
           return b.Matches.length - a.Matches.length || a.Repo.localeCompare(b.Repo);
         });
 
         var byRepo = {};
-        results.forEach(function(res) {
+        results.forEach(function (res) {
           byRepo[res.Repo] = res;
         });
 
@@ -230,24 +232,24 @@ var Model = {
 
         _this.didSearch.raise(_this, _this.results, _this.stats);
       },
-      error: function(xhr, status, err) {
+      error: function (xhr, status, err) {
         _this.didError.raise(this, "The server broke down");
       }
     });
   },
 
-  LoadMore: function(repo) {
+  LoadMore: function (repo) {
     var _this = this,
-        results = this.resultsByRepo[repo],
-        numLoaded = results.Matches.length,
-        numNeeded = results.FilesWithMatch - numLoaded,
-        numToLoad = Math.min(2000, numNeeded),
-        endAt = numNeeded == numToLoad ? '' : '' + numToLoad;
+      results = this.resultsByRepo[repo],
+      numLoaded = results.Matches.length,
+      numNeeded = results.FilesWithMatch - numLoaded,
+      numToLoad = Math.min(2000, numNeeded),
+      endAt = numNeeded == numToLoad ? '' : '' + numToLoad;
 
     _this.willLoadMore.raise(this, repo, numLoaded, numNeeded, numToLoad);
 
     var params = $.extend(this.params, {
-      rng: numLoaded+':'+endAt,
+      rng: numLoaded + ':' + endAt,
       repos: repo
     });
 
@@ -256,7 +258,7 @@ var Model = {
       data: params,
       type: 'GET',
       dataType: 'json',
-      success: function(data) {
+      success: function (data) {
         if (data.Error) {
           _this.didError.raise(_this, data.Error);
           return;
@@ -266,21 +268,21 @@ var Model = {
         results.Matches = results.Matches.concat(result.Matches);
         _this.didLoadMore.raise(_this, repo, _this.results);
       },
-      error: function(xhr, status, err) {
+      error: function (xhr, status, err) {
         _this.didError.raise(this, "The server broke down");
       }
     });
   },
 
-  NameForRepo: function(repo) {
+  NameForRepo: function (repo) {
     var info = this.repos[repo];
     if (!info) {
       return repo;
     }
 
     var url = info.url,
-        ax = url.lastIndexOf('/');
-    if (ax  < 0) {
+      ax = url.lastIndexOf('/');
+    if (ax < 0) {
       return repo;
     }
 
@@ -294,14 +296,14 @@ var Model = {
     return url.substring(bx + 1, ax) + ' / ' + name;
   },
 
-  UrlToRepo: function(repo, path, line, rev) {
+  UrlToRepo: function (repo, path, line, rev) {
     return UrlToRepo(this.repos[repo], path, line, rev);
   }
 
 };
 
 var RepoOption = React.createClass({
-  render: function() {
+  render: function () {
     return (
       <option value={this.props.value} selected={this.props.selected}>{this.props.value}</option>
     )
@@ -309,14 +311,14 @@ var RepoOption = React.createClass({
 });
 
 var SearchBar = React.createClass({
-  componentWillMount: function() {
+  componentWillMount: function () {
     var _this = this;
-    Model.didLoadRepos.tap(function(model, repos) {
+    Model.didLoadRepos.tap(function (model, repos) {
       _this.setState({ allRepos: Object.keys(repos) });
     });
   },
 
-  componentDidMount: function() {
+  componentDidMount: function () {
     var q = this.refs.q.getDOMNode();
 
     // TODO(knorton): Can't set this in jsx
@@ -330,58 +332,58 @@ var SearchBar = React.createClass({
 
     q.focus();
   },
-  getInitialState: function() {
+  getInitialState: function () {
     return {
       state: null,
       allRepos: [],
       repos: []
     };
   },
-  queryGotKeydown: function(event) {
+  queryGotKeydown: function (event) {
     switch (event.keyCode) {
-    case 40:
-      // this will cause advanced to expand if it is not expanded.
-      this.refs.files.getDOMNode().focus();
-      break;
-    case 38:
-      this.hideAdvanced();
-      break;
-    case 13:
-      this.submitQuery();
-      break;
+      case 40:
+        // this will cause advanced to expand if it is not expanded.
+        this.refs.files.getDOMNode().focus();
+        break;
+      case 38:
+        this.hideAdvanced();
+        break;
+      case 13:
+        this.submitQuery();
+        break;
     }
   },
-  queryGotFocus: function(event) {
+  queryGotFocus: function (event) {
     if (!this.hasAdvancedValues()) {
       this.hideAdvanced();
     }
   },
-  filesGotKeydown: function(event) {
+  filesGotKeydown: function (event) {
     switch (event.keyCode) {
-    case 38:
-      // if advanced is empty, close it up.
-      if (this.refs.files.getDOMNode().value.trim() === '') {
-        this.hideAdvanced();
-      }
-      this.refs.q.getDOMNode().focus();
-      break;
-    case 13:
-      this.submitQuery();
-      break;
+      case 38:
+        // if advanced is empty, close it up.
+        if (this.refs.files.getDOMNode().value.trim() === '') {
+          this.hideAdvanced();
+        }
+        this.refs.q.getDOMNode().focus();
+        break;
+      case 13:
+        this.submitQuery();
+        break;
     }
   },
-  filesGotFocus: function(event) {
+  filesGotFocus: function (event) {
     this.showAdvanced();
   },
-  submitQuery: function() {
+  submitQuery: function () {
     this.props.onSearchRequested(this.getParams());
   },
-  getRegExp : function() {
+  getRegExp: function () {
     return new RegExp(
       this.refs.q.getDOMNode().value.trim(),
       this.refs.icase.getDOMNode().checked ? 'ig' : 'g');
   },
-  getParams: function() {
+  getParams: function () {
     // selecting all repos is the same as not selecting any, so normalize the url
     // to have none.
     var repos = Model.ValidRepos(this.refs.repos.state.value);
@@ -390,29 +392,29 @@ var SearchBar = React.createClass({
     }
 
     return {
-      q : this.refs.q.getDOMNode().value.trim(),
-      files : this.refs.files.getDOMNode().value.trim(),
-      repos : repos.join(','),
+      q: this.refs.q.getDOMNode().value.trim(),
+      files: this.refs.files.getDOMNode().value.trim(),
+      repos: repos.join(','),
       i: this.refs.icase.getDOMNode().checked ? 'fosho' : 'nope'
     };
   },
-  setParams: function(params) {
+  setParams: function (params) {
     var q = this.refs.q.getDOMNode(),
-        i = this.refs.icase.getDOMNode(),
-        files = this.refs.files.getDOMNode();
+      i = this.refs.icase.getDOMNode(),
+      files = this.refs.files.getDOMNode();
 
     q.value = params.q;
     i.checked = ParamValueToBool(params.i);
     files.value = params.files;
   },
-  hasAdvancedValues: function() {
+  hasAdvancedValues: function () {
     return this.refs.files.getDOMNode().value.trim() !== '' || this.refs.icase.getDOMNode().checked || this.refs.repos.getDOMNode().value !== '';
   },
-  showAdvanced: function() {
+  showAdvanced: function () {
     var adv = this.refs.adv.getDOMNode(),
-        ban = this.refs.ban.getDOMNode(),
-        q = this.refs.q.getDOMNode(),
-        files = this.refs.files.getDOMNode();
+      ban = this.refs.ban.getDOMNode(),
+      q = this.refs.q.getDOMNode(),
+      files = this.refs.files.getDOMNode();
 
     css(adv, 'height', 'auto');
     css(adv, 'padding', '10px 0');
@@ -424,10 +426,10 @@ var SearchBar = React.createClass({
       files.focus();
     }
   },
-  hideAdvanced: function() {
+  hideAdvanced: function () {
     var adv = this.refs.adv.getDOMNode(),
-        ban = this.refs.ban.getDOMNode(),
-        q = this.refs.q.getDOMNode();
+      ban = this.refs.ban.getDOMNode(),
+      q = this.refs.q.getDOMNode();
 
     css(adv, 'height', '0');
     css(adv, 'padding', '0');
@@ -437,17 +439,17 @@ var SearchBar = React.createClass({
 
     q.focus();
   },
-  render: function() {
+  render: function () {
     var repoCount = this.state.allRepos.length,
-        repoOptions = [],
-        selected = {};
+      repoOptions = [],
+      selected = {};
 
-    this.state.repos.forEach(function(repo) {
+    this.state.repos.forEach(function (repo) {
       selected[repo] = true;
     });
 
-    this.state.allRepos.forEach(function(repoName) {
-      repoOptions.push(<RepoOption value={repoName} selected={selected[repoName]}/>);
+    this.state.allRepos.forEach(function (repoName) {
+      repoOptions.push(<RepoOption value={repoName} selected={selected[repoName]} />);
     });
 
     var stats = this.state.stats;
@@ -458,7 +460,7 @@ var SearchBar = React.createClass({
           <div className="stats-left">
             <a href="excluded_files.html"
               className="link-gray">
-                Excluded Files
+              Excluded Files
             </a>
           </div>
           <div className="stats-right">
@@ -474,12 +476,12 @@ var SearchBar = React.createClass({
       <div id="input">
         <div id="ina">
           <input id="q"
-              type="text"
-              placeholder="Search by Regexp"
-              ref="q"
-              autocomplete="off"
-              onKeyDown={this.queryGotKeydown}
-              onFocus={this.queryGotFocus}/>
+            type="text"
+            placeholder="Search by Regexp"
+            ref="q"
+            autocomplete="off"
+            onKeyDown={this.queryGotKeydown}
+            onFocus={this.queryGotFocus} />
           <div className="button-add-on">
             <button id="dodat" onClick={this.submitQuery}></button>
           </div>
@@ -492,11 +494,11 @@ var SearchBar = React.createClass({
               <label htmlFor="files">File Path</label>
               <div className="field-input">
                 <input type="text"
-                    id="files"
-                    placeholder="regexp"
-                    ref="files"
-                    onKeyDown={this.filesGotKeydown}
-                    onFocus={this.filesGotFocus} />
+                  id="files"
+                  placeholder="regexp"
+                  ref="files"
+                  onKeyDown={this.filesGotKeydown}
+                  onFocus={this.filesGotFocus} />
               </div>
             </div>
             <div className="field">
@@ -527,14 +529,14 @@ var SearchBar = React.createClass({
 /**
  * Take a list of matches and turn it into a simple list of lines.
  */
-var MatchToLines = function(match) {
+var MatchToLines = function (match) {
   var lines = [],
-      base = match.LineNumber,
-      nBefore = match.Before.length,
-      nAfter = match.After.length;
-  match.Before.forEach(function(line, index) {
+    base = match.LineNumber,
+    nBefore = match.Before.length,
+    nAfter = match.After.length;
+  match.Before.forEach(function (line, index) {
     lines.push({
-      Number : base - nBefore + index,
+      Number: base - nBefore + index,
       Content: line,
       Match: false
     });
@@ -546,7 +548,7 @@ var MatchToLines = function(match) {
     Match: true
   });
 
-  match.After.forEach(function(line, index) {
+  match.After.forEach(function (line, index) {
     lines.push({
       Number: base + index + 1,
       Content: line,
@@ -565,19 +567,19 @@ var MatchToLines = function(match) {
  * TODO(knorton): This code is a bit skanky. I wrote it while sleepy. It can surely be
  * made simpler.
  */
-var CoalesceMatches = function(matches) {
+var CoalesceMatches = function (matches) {
   var blocks = matches.map(MatchToLines),
-      res = [],
-      current;
+    res = [],
+    current;
   // go through each block of lines and see if it overlaps
   // with the previous.
   for (var i = 0, n = blocks.length; i < n; i++) {
     var block = blocks[i],
-        max = current ? current[current.length - 1].Number : -1;
+      max = current ? current[current.length - 1].Number : -1;
     // if the first line in the block is before the last line in
     // current, we'll be merging.
     if (block[0].Number <= max) {
-      block.forEach(function(line) {
+      block.forEach(function (line) {
         if (line.Number > max) {
           current.push(line);
         } else if (current && line.Match) {
@@ -604,22 +606,23 @@ var CoalesceMatches = function(matches) {
 /**
  * Use the DOM to safely htmlify some text.
  */
-var EscapeHtml = function(text) {
-  var e = EscapeHtml.e;
-  e.textContent = text;
-  return e.innerHTML;
+var EscapeHtml = function (text) {
+  //var e = EscapeHtml.e;
+  //e.textContent = text;
+  //return e.innerHTML;
+  return text;
 };
 EscapeHtml.e = document.createElement('div');
 
 /**
  * Produce html for a line using the regexp to highlight matches.
  */
-var ContentFor = function(line, regexp) {
+var ContentFor = function (line, regexp) {
   if (!line.Match) {
     return EscapeHtml(line.Content);
   }
   var content = line.Content,
-      buffer = [];
+    buffer = [];
 
   while (true) {
     regexp.lastIndex = 0;
@@ -630,35 +633,42 @@ var ContentFor = function(line, regexp) {
     }
 
     buffer.push(EscapeHtml(content.substring(0, regexp.lastIndex - m[0].length)));
-    buffer.push( '<em>' + EscapeHtml(m[0]) + '</em>');
+    buffer.push('STARTFIND' + EscapeHtml(m[0]) + 'ENDFIND');
     content = content.substring(regexp.lastIndex);
   }
   return buffer.join('');
 };
 
 var FilesView = React.createClass({
-  onLoadMore: function(event) {
+  onLoadMore: function (event) {
     Model.LoadMore(this.props.repo);
   },
 
-  render: function() {
+  render: function () {
     var rev = this.props.rev,
-        repo = this.props.repo,
-        regexp = this.props.regexp,
-        matches = this.props.matches,
-        totalMatches = this.props.totalMatches;
-    var files = matches.map(function(match, index) {
+      repo = this.props.repo,
+      regexp = this.props.regexp,
+      matches = this.props.matches,
+      totalMatches = this.props.totalMatches;
+    var files = matches.map(function (match, index) {
       var filename = match.Filename,
-          blocks = CoalesceMatches(match.Matches);
-      var matches = blocks.map(function(block) {
-        var lines = block.map(function(line) {
+        blocks = CoalesceMatches(match.Matches);
+      var matches = blocks.map(function (block) {
+        var lines = block.map(function (line) {
           var content = ContentFor(line, regexp);
+          console.log("line: ", line);
+          console.log("before: ", content);
+          content = Prism.highlight(content, Prism.languages.java);
+          console.log("after: ", content);
+          content = content.replace("STARTFIND", "<span style='background-color: #FFFF00'>");
+          content = content.replace("ENDFIND", "</span>");
+          //console.log("replace: ", content);
           return (
             <div className="line">
               <a href={Model.UrlToRepo(repo, filename, line.Number, rev)}
-                  className="lnum"
-                  target="_blank">{line.Number}</a>
-              <span className="lval" dangerouslySetInnerHTML={{__html:content}} />
+                className="lnum"
+                target="_blank">{line.Number}</a>
+              <span className="lval" dangerouslySetInnerHTML={{ __html: content }} />
             </div>
           );
         });
@@ -689,27 +699,27 @@ var FilesView = React.createClass({
 
     return (
       <div className="files">
-      {files}
-      {more}
+        {files}
+        {more}
       </div>
     );
   }
 });
 
 var ResultView = React.createClass({
-  componentWillMount: function() {
+  componentWillMount: function () {
     var _this = this;
-    Model.willSearch.tap(function(model, params) {
+    Model.willSearch.tap(function (model, params) {
       _this.setState({
         results: null,
         query: params.q
       });
     });
   },
-  getInitialState: function() {
+  getInitialState: function () {
     return { results: null };
   },
-  render: function() {
+  render: function () {
     if (this.state.error) {
       return (
         <div id="no-result" className="error">
@@ -732,8 +742,8 @@ var ResultView = React.createClass({
     }
 
     var regexp = this.state.regexp,
-        results = this.state.results || [];
-    var repos = results.map(function(result, index) {
+      results = this.state.results || [];
+    var repos = results.map(function (result, index) {
       return (
         <div className="repo">
           <div className="title">
@@ -741,10 +751,10 @@ var ResultView = React.createClass({
             <span className="name">{Model.NameForRepo(result.Repo)}</span>
           </div>
           <FilesView matches={result.Matches}
-              rev={result.Rev}
-              repo={result.Repo}
-              regexp={regexp}
-              totalMatches={result.FilesWithMatch} />
+            rev={result.Rev}
+            repo={result.Repo}
+            regexp={regexp}
+            totalMatches={result.FilesWithMatch} />
         </div>
       );
     });
@@ -755,9 +765,9 @@ var ResultView = React.createClass({
 });
 
 var App = React.createClass({
-  componentWillMount: function() {
+  componentWillMount: function () {
     var params = ParamsFromUrl(),
-        repos = (params.repos == '') ? [] : params.repos.split(',');
+      repos = (params.repos == '') ? [] : params.repos.split(',');
 
     this.setState({
       q: params.q,
@@ -767,14 +777,14 @@ var App = React.createClass({
     });
 
     var _this = this;
-    Model.didLoadRepos.tap(function(model, repos) {
+    Model.didLoadRepos.tap(function (model, repos) {
       // If all repos are selected, don't show any selected.
       if (model.ValidRepos(_this.state.repos).length == model.RepoCount()) {
-        _this.setState({repos: []});
+        _this.setState({ repos: [] });
       }
     });
 
-    Model.didSearch.tap(function(model, results, stats) {
+    Model.didSearch.tap(function (model, results, stats) {
       _this.refs.searchBar.setState({
         stats: stats,
         repos: repos,
@@ -787,7 +797,7 @@ var App = React.createClass({
       });
     });
 
-    Model.didLoadMore.tap(function(model, repo, results) {
+    Model.didLoadMore.tap(function (model, repo, results) {
       _this.refs.resultView.setState({
         results: results,
         regexp: _this.refs.searchBar.getRegExp(),
@@ -795,40 +805,40 @@ var App = React.createClass({
       });
     });
 
-    Model.didError.tap(function(model, error) {
+    Model.didError.tap(function (model, error) {
       _this.refs.resultView.setState({
         results: null,
         error: error
       });
     });
 
-    window.addEventListener('popstate', function(e) {
+    window.addEventListener('popstate', function (e) {
       var params = ParamsFromUrl();
       _this.refs.searchBar.setParams(params);
       Model.Search(params);
     });
   },
-  onSearchRequested: function(params) {
+  onSearchRequested: function (params) {
     this.updateHistory(params);
     Model.Search(this.refs.searchBar.getParams());
   },
-  updateHistory: function(params) {
+  updateHistory: function (params) {
     var path = location.pathname +
       '?q=' + encodeURIComponent(params.q) +
       '&i=' + encodeURIComponent(params.i) +
       '&files=' + encodeURIComponent(params.files) +
       '&repos=' + params.repos;
-    history.pushState({path:path}, '', path);
+    history.pushState({ path: path }, '', path);
   },
-  render: function() {
+  render: function () {
     return (
       <div>
         <SearchBar ref="searchBar"
-            q={this.state.q}
-            i={this.state.i}
-            files={this.state.files}
-            repos={this.state.repos}
-            onSearchRequested={this.onSearchRequested} />
+          q={this.state.q}
+          i={this.state.i}
+          files={this.state.files}
+          repos={this.state.repos}
+          onSearchRequested={this.onSearchRequested} />
         <ResultView ref="resultView" q={this.state.q} />
       </div>
     );
