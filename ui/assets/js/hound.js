@@ -504,7 +504,7 @@ var SearchBar = React.createClass({
             <div className="field">
               <label htmlFor="ignore-case">Ignore Case</label>
               <div className="field-input">
-                <input id="ignore-case" type="checkbox" ref="icase" />
+                <input id="ignore-case" type="checkbox" ref="icase" checked />
               </div>
             </div>
             <div className="field">
@@ -639,6 +639,19 @@ var ContentFor = function (line, regexp) {
   return buffer.join('');
 };
 
+var FindGrammar = function (filename) {
+  var extension = filename.split('.').pop();
+  //if (extension === 'e4xmi') {
+  //  extension = 'xml'
+  //}
+  var grammar = Prism.languages[extension];
+  if (typeof grammar === 'undefined' || grammar === null ) {
+    grammar = Prism.languages.markup;
+  }
+
+  return grammar;
+};
+
 var FilesView = React.createClass({
   onLoadMore: function (event) {
     Model.LoadMore(this.props.repo);
@@ -658,11 +671,16 @@ var FilesView = React.createClass({
           var content = ContentFor(line, regexp);
           console.log("line: ", line);
           console.log("before: ", content);
-          content = Prism.highlight(content, Prism.languages.java);
-          console.log("after: ", content);
-          content = content.replace("STARTFIND", "<span style='background-color: #FFFF00'>");
-          content = content.replace("ENDFIND", "</span>");
-          //console.log("replace: ", content);
+          var grammar = FindGrammar(filename);
+
+
+            content = Prism.highlight(content, grammar);
+            console.log("after: ", content);
+            content = content.replace("STARTFIND", "<span style='background-color: #FFFF00'>");
+            content = content.replace("ENDFIND", "</span>");
+
+
+
           return (
             <div className="line">
               <a href={Model.UrlToRepo(repo, filename, line.Number, rev)}
