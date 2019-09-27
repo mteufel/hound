@@ -117,7 +117,7 @@ func main() {
 	info_log = log.New(os.Stdout, "", log.LstdFlags)
 	error_log = log.New(os.Stderr, "", log.LstdFlags)
 
-	flagConf := flag.String("conf", "/Users/vzteufem/go/go-prj/bin/config.json", "")
+	flagConf := flag.String("conf", "config.json", "")
 	flagAddr := flag.String("addr", ":6080", "")
 	flagDev := flag.Bool("dev", false, "")
 
