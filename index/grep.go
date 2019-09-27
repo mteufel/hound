@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/hound/codesearch/regexp"
+	"github.com/mteufel/hound/codesearch/regexp"
 )
 
 var nl = []byte{'\n'}

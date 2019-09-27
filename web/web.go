@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/hound/api"
-	"github.com/hound/config"
-	"github.com/hound/searcher"
-	"github.com/hound/ui"
+	"github.com/mteufel/hound/api"
+	"github.com/mteufel/hound/config"
+	"github.com/mteufel/hound/searcher"
+	"github.com/mteufel/hound/ui"
 )
 
 // Server is an HTTP server that handles all

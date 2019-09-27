@@ -8,8 +8,8 @@ import (
 	"os/user"
 	"regexp"
 
-	"github.com/hound/client"
-	"github.com/hound/index"
+	"github.com/mteufel/hound/client"
+	"github.com/mteufel/hound/index"
 )
 
 // A uninitialized variable that can be defined during the build process with
