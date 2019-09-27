@@ -5,8 +5,8 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/hound-search/hound/ansi"
-	"github.com/hound-search/hound/config"
+	"github.com/hound/ansi"
+	"github.com/hound/config"
 )
 
 type grepPresenter struct {
