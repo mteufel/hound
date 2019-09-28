@@ -118,6 +118,10 @@ button:focus {
   cursor:pointer;
 }
 
+.empty-line {
+  height: 6px;
+}
+
 /* Media object clearfix */
 #adv > .field {
   overflow: hidden;

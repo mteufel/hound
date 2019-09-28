@@ -185,13 +185,14 @@ var Model = {
       return;
     }
 
+    params.ctx=5;
     $.ajax({
       url: 'api/v1/search',
       data: params,
       type: 'GET',
       dataType: 'json',
       beforeSend: function(jqXHR, settings) {
-        document.write(settings.url);
+        console.log(settings.url);
       },
       success: function (data) {
         if (data.Error) {
@@ -376,7 +377,10 @@ var SearchBar = React.createClass({
     }
   },
   filesGotFocus: function (event) {
-    this.showAdvanced();
+    this.showAdvanced(false);
+  },
+  linesOfContextGotFocus: function (event) {
+    this.showAdvanced(true);
   },
   submitQuery: function () {
     this.props.onSearchRequested(this.getParams());
@@ -413,12 +417,12 @@ var SearchBar = React.createClass({
   hasAdvancedValues: function () {
     return this.refs.files.getDOMNode().value.trim() !== '' || this.refs.icase.getDOMNode().checked || this.refs.repos.getDOMNode().value !== '';
   },
-  showAdvanced: function () {
+  showAdvanced: function (showLinesOfContext) {
     var adv = this.refs.adv.getDOMNode(),
       ban = this.refs.ban.getDOMNode(),
       q = this.refs.q.getDOMNode(),
-      files = this.refs.files.getDOMNode();
-
+      files = this.refs.files.getDOMNode(),
+      linesOfContext = this.refs.linesOfContext.getDOMNode();
     css(adv, 'height', 'auto');
     css(adv, 'padding', '10px 0');
 
@@ -426,7 +430,11 @@ var SearchBar = React.createClass({
     css(ban, 'opacity', '0');
 
     if (q.value.trim() !== '') {
-      files.focus();
+      if (showLinesOfContext) {
+        linesOfContext.focus();
+      } else {
+        files.focus();
+      }
     }
   },
   hideAdvanced: function () {
@@ -504,6 +512,18 @@ var SearchBar = React.createClass({
                   onFocus={this.filesGotFocus} />
               </div>
             </div>
+            <div className="empty-line" />
+            <div className="field">
+              <label htmlFor="linesOfContext">Lines of Context</label>
+              <div className="field-input">
+                <input type="text"
+                       id="linesOfContext"
+                       placeholder="number of lines"
+                       ref="linesOfContext"
+                       onKeyDown={this.filesGotKeydown}
+                       onFocus={this.linesOfContextGotFocus} />
+              </div>
+            </div>
             <div className="field">
               <label htmlFor="ignore-case">Ignore Case</label>
               <div className="field-input">
@@ -520,7 +540,7 @@ var SearchBar = React.createClass({
             </div>
           </div>
           <div className="ban" ref="ban" onClick={this.showAdvanced}>
-            <em>Advanced:</em> ignore case, filter by path, stuff like that.
+            <em>Advanced:</em> ignore case, lines of context, filter by path, stuff like that.
           </div>
         </div>
         {statsView}
@@ -683,11 +703,11 @@ var FilesView = React.createClass({
       var matches = blocks.map(function (block) {
         var lines = block.map(function (line) {
           var content = ContentFor(line, regexp);
-          console.log("line: ", line);
-          console.log("before: ", content);
+          //console.log("line: ", line);
+          //console.log("before: ", content);
           var grammar = FindGrammar(filename);
           content = Prism.highlight(content, grammar);
-          console.log("after: ", content);
+          //console.log("after: ", content);
           content = content.replace(new RegExp("STARTFIND","g"), "<span style='background-color: #FFFF00'>");
           content = content.replace(new RegExp("ENDFIND","g"), "</span>");
           return (
