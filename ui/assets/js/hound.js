@@ -641,14 +641,25 @@ var ContentFor = function (line, regexp) {
 
 var FindGrammar = function (filename) {
   var extension = filename.split('.').pop();
-  //if (extension === 'e4xmi') {
-  //  extension = 'xml'
-  //}
   var grammar = Prism.languages[extension];
   if (typeof grammar === 'undefined' || grammar === null ) {
     grammar = Prism.languages.markup;
   }
+  if (extension === 'tab' ||
+      extension === 'trg' ||
+      extension === 'mv'  ||
+      extension === 'sql' ||
+      extension === 'vw') {
+    grammar = Prism.languages.sql;
+  }
 
+  if (extension === 'fnc' ||
+      extension === 'prc' ||
+      extension === 'pkb'  ||
+      extension === 'pks' ||
+      extension === 'vw') {
+    grammar = Prism.languages.plsql;
+  }
   return grammar;
 };
 
@@ -672,15 +683,10 @@ var FilesView = React.createClass({
           console.log("line: ", line);
           console.log("before: ", content);
           var grammar = FindGrammar(filename);
-
-
-            content = Prism.highlight(content, grammar);
-            console.log("after: ", content);
-            content = content.replace("STARTFIND", "<span style='background-color: #FFFF00'>");
-            content = content.replace("ENDFIND", "</span>");
-
-
-
+          content = Prism.highlight(content, grammar);
+          console.log("after: ", content);
+          content = content.replace(new RegExp("STARTFIND","g"), "<span style='background-color: #FFFF00'>");
+          content = content.replace(new RegExp("ENDFIND","g"), "</span>");
           return (
             <div className="line">
               <a href={Model.UrlToRepo(repo, filename, line.Number, rev)}
