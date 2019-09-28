@@ -190,6 +190,9 @@ var Model = {
       data: params,
       type: 'GET',
       dataType: 'json',
+      beforeSend: function(jqXHR, settings) {
+        document.write(settings.url);
+      },
       success: function (data) {
         if (data.Error) {
           _this.didError.raise(_this, data.Error);
@@ -531,9 +534,9 @@ var SearchBar = React.createClass({
  */
 var MatchToLines = function (match) {
   var lines = [],
-    base = match.LineNumber,
-    nBefore = match.Before.length,
-    nAfter = match.After.length;
+  base = match.LineNumber,
+  nBefore = match.Before.length,
+  nAfter = match.After.length;
   match.Before.forEach(function (line, index) {
     lines.push({
       Number: base - nBefore + index,
