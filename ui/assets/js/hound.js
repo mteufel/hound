@@ -70,18 +70,44 @@ var ParamsFromQueryString = function (qs, params) {
     params[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1]);
   });
 
-  console.log('params:' , params)
   return params;
 };
 
 var ParamsFromUrl = function (params) {
-  params = params || {
-    q: '',
-    i: 'nope',
-    files: '',
-    repos: '*',
-    ctx: '2'
-  };
+
+  $.ajax({
+    url: 'api/v1/config',
+    async: false,
+    dataType: 'json',
+    success: function (data) {
+      console.log(data.defaultRepos);
+
+      params = params || {
+        q: '',
+        i: 'nope',
+        files: '',
+        repos: data.defaultRepos,
+        ctx: '2'
+      };
+
+
+
+    },
+    error: function (xhr, status, err) {
+      console.error(err);
+
+      params = params || {
+        q: '',
+        i: 'nope',
+        files: '',
+        repos: '*',
+        ctx: '2'
+      };
+
+    }
+  });
+
+  console.log('..... params: ' , params);
   return ParamsFromQueryString(location.search, params);
 };
 
@@ -163,11 +189,11 @@ var Model = {
     this.willSearch.raise(this, params);
     var _this = this,
       startedAt = Date.now();
-
     params = $.extend({
       stats: 'fosho',
       repos: '*',
       rng: ':20',
+      ctx: '2'
     }, params);
 
     if (params.repos === '') {
@@ -192,9 +218,6 @@ var Model = {
       data: params,
       type: 'GET',
       dataType: 'json',
-      beforeSend: function(jqXHR, settings) {
-        console.log(settings.url);
-      },
       success: function (data) {
         if (data.Error) {
           _this.didError.raise(_this, data.Error);
@@ -380,7 +403,7 @@ var SearchBar = React.createClass({
   filesGotFocus: function (event) {
     this.showAdvanced(false);
   },
-  linesOfContextGotFocus: function (event) {
+  ctxGotFocus: function (event) {
     this.showAdvanced(true);
   },
   submitQuery: function () {
@@ -398,11 +421,12 @@ var SearchBar = React.createClass({
     if (repos.length == Model.RepoCount()) {
       repos = [];
     }
-
+    console.log('getPrams ', repos)
     return {
       q: this.refs.q.getDOMNode().value.trim(),
       files: this.refs.files.getDOMNode().value.trim(),
       repos: repos.join(','),
+      ctx: this.refs.ctx.getDOMNode().value.trim(),
       i: this.refs.icase.getDOMNode().checked ? 'fosho' : 'nope'
     };
   },
@@ -410,12 +434,16 @@ var SearchBar = React.createClass({
     var q = this.refs.q.getDOMNode(),
       i = this.refs.icase.getDOMNode(),
       files = this.refs.files.getDOMNode(),
-      ctx=this.refs.linesOfContext.getDOMNode();
+      repos = this.refs.repos.getDOMNode(),
+      ctx=this.refs.ctx.getDOMNode();
 
     q.value = params.q;
     i.checked = ParamValueToBool(params.i);
     files.value = params.files;
-    ctx.value=params.value;
+    ctx.value=params.ctx;
+    repos.value=params.repos;
+    console.log('setParams: repos.value=' , repos.value)
+    console.log('setParams: repos.value=' , params.repos)
   },
   hasAdvancedValues: function () {
     return this.refs.files.getDOMNode().value.trim() !== '' || this.refs.icase.getDOMNode().checked || this.refs.repos.getDOMNode().value !== '';
@@ -539,7 +567,7 @@ var SearchBar = React.createClass({
                        id="linesOfContext"
                        placeholder="number of lines"
                        ref="ctx"
-                       onFocus={this.linesOfContextGotFocus} />
+                       onFocus={this.ctxGotFocus} />
               </div>
             </div>
             <div className="field">

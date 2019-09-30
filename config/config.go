@@ -56,6 +56,7 @@ func (r *Repo) PushUpdatesEnabled() bool {
 type Config struct {
 	DbPath                string           `json:"dbpath"`
 	TestParam             string           `json:"test-param"`
+	DefaultRepos          string           `json:"defaultRepos"`
 	Repos                 map[string]*Repo `json:"repos"`
 	MaxConcurrentIndexers int              `json:"max-concurrent-indexers"`
 	HealthCheckURI        string           `json:"health-check-uri"`
