@@ -13,7 +13,7 @@ import (
 )
 
 // A uninitialized variable that can be defined during the build process with
-// -ldflags -X main.defaultHouse addr. This should remain uninitialized.
+// -ldflags -X main.defaultHouse addr. This should remain uninitialized.x
 var defaultHost string
 
 // a convenience method for creating a new presenter that is either

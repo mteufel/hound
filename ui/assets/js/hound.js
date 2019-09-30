@@ -1,6 +1,7 @@
 import { UrlToRepo } from './common';
 import Prism from './prism.js';
 
+
 var Signal = function () {
 };
 
@@ -69,7 +70,7 @@ var ParamsFromQueryString = function (qs, params) {
     params[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1]);
   });
 
-
+  console.log('params:' , params)
   return params;
 };
 
@@ -78,7 +79,8 @@ var ParamsFromUrl = function (params) {
     q: '',
     i: 'nope',
     files: '',
-    repos: '*'
+    repos: '*',
+    ctx: '2'
   };
   return ParamsFromQueryString(location.search, params);
 };
@@ -185,7 +187,6 @@ var Model = {
       return;
     }
 
-    params.ctx=5;
     $.ajax({
       url: 'api/v1/search',
       data: params,
@@ -408,11 +409,13 @@ var SearchBar = React.createClass({
   setParams: function (params) {
     var q = this.refs.q.getDOMNode(),
       i = this.refs.icase.getDOMNode(),
-      files = this.refs.files.getDOMNode();
+      files = this.refs.files.getDOMNode(),
+      ctx=this.refs.linesOfContext.getDOMNode();
 
     q.value = params.q;
     i.checked = ParamValueToBool(params.i);
     files.value = params.files;
+    ctx.value=params.value;
   },
   hasAdvancedValues: function () {
     return this.refs.files.getDOMNode().value.trim() !== '' || this.refs.icase.getDOMNode().checked || this.refs.repos.getDOMNode().value !== '';
@@ -422,7 +425,7 @@ var SearchBar = React.createClass({
       ban = this.refs.ban.getDOMNode(),
       q = this.refs.q.getDOMNode(),
       files = this.refs.files.getDOMNode(),
-      linesOfContext = this.refs.linesOfContext.getDOMNode();
+      ctx = this.refs.ctx.getDOMNode();
     css(adv, 'height', 'auto');
     css(adv, 'padding', '10px 0');
 
@@ -431,7 +434,7 @@ var SearchBar = React.createClass({
 
     if (q.value.trim() !== '') {
       if (showLinesOfContext) {
-        linesOfContext.focus();
+        ctx.focus();
       } else {
         files.focus();
       }
@@ -483,6 +486,22 @@ var SearchBar = React.createClass({
       );
     }
 
+    // Makes sure that the user enters only values between 1 and 15 (via Regex)
+    $("#linesOfContext").on("keypress keyup blur",function (event) {
+      // filter out non numeric values and prevent them
+      $(this).val($(this).val().replace(/[^\d].+/, ""));
+      if (event.which < 48 || event.which > 57) {
+        event.preventDefault();
+      }
+      if ($(this).val().trim().length > 0) {
+        // check range 1-15
+        if (!new RegExp("^(1[0-5]|[1-9])$").test($(this).val()) ) {
+          $(this).val('');
+          event.preventDefault();
+        }
+      }
+    });
+
     return (
       <div id="input">
         <div id="ina">
@@ -519,8 +538,7 @@ var SearchBar = React.createClass({
                 <input type="text"
                        id="linesOfContext"
                        placeholder="number of lines"
-                       ref="linesOfContext"
-                       onKeyDown={this.filesGotKeydown}
+                       ref="ctx"
                        onFocus={this.linesOfContextGotFocus} />
               </div>
             </div>
@@ -548,6 +566,7 @@ var SearchBar = React.createClass({
     );
   }
 });
+
 
 /**
  * Take a list of matches and turn it into a simple list of lines.
@@ -820,7 +839,8 @@ var App = React.createClass({
       q: params.q,
       i: params.i,
       files: params.files,
-      repos: repos
+      repos: repos,
+      ctx: params.ctx
     });
 
     var _this = this;
@@ -874,7 +894,8 @@ var App = React.createClass({
       '?q=' + encodeURIComponent(params.q) +
       '&i=' + encodeURIComponent(params.i) +
       '&files=' + encodeURIComponent(params.files) +
-      '&repos=' + params.repos;
+      '&repos=' + params.repos +
+      '&ctx=' + params.ctx;
     history.pushState({ path: path }, '', path);
   },
   render: function () {
@@ -885,6 +906,7 @@ var App = React.createClass({
           i={this.state.i}
           files={this.state.files}
           repos={this.state.repos}
+          ctx={this.state.ctx}
           onSearchRequested={this.onSearchRequested} />
         <ResultView ref="resultView" q={this.state.q} />
       </div>
