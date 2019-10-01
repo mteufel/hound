@@ -138,11 +138,23 @@ var Model = {
   ValidRepos: function (repos) {
     var all = this.repos,
       seen = {};
-    return repos.filter(function (repo) {
+    console.log('Valid Repos ------------Begin');
+    console.log('this: ', this);
+
+    console.log('repos parameters: ', repos);
+    console.log('all: ', all);
+    console.log('seen: ', seen);
+
+    var valid = repos.filter(function (repo) {
       var valid = all[repo] && !seen[repo];
       seen[repo] = true;
       return valid;
     });
+
+    console.log('seen after: ', seen);
+    console.log('seen valid: ', valid);
+    console.log('Valid Repos ------------End');
+    return valid;
   },
 
   RepoCount: function () {
@@ -163,6 +175,20 @@ var Model = {
     if (typeof ModelData != 'undefined') {
       var data = JSON.parse(ModelData),
         repos = {};
+
+      $.ajax({
+        url: 'api/v1/config',
+        async: false,
+        dataType: 'json',
+        success: function (data) {
+          _this.defaultRepos = data.defaultRepos;
+        },
+        error: function (xhr, status, err) {
+          console.error(err);
+        }
+      });
+
+
       for (var name in data) {
         repos[name] = data[name];
       }
@@ -183,9 +209,12 @@ var Model = {
         console.error(err);
       }
     });
+
+
   },
 
   Search: function (params) {
+
     this.willSearch.raise(this, params);
     var _this = this,
       startedAt = Date.now();
@@ -341,8 +370,9 @@ var RepoOption = React.createClass({
 var SearchBar = React.createClass({
   componentWillMount: function () {
     var _this = this;
+
     Model.didLoadRepos.tap(function (model, repos) {
-      _this.setState({ allRepos: Object.keys(repos) });
+      _this.setState({ allRepos: Object.keys(repos), defaultRepos: _this.props.repos });
     });
   },
 
@@ -387,6 +417,7 @@ var SearchBar = React.createClass({
     }
   },
   filesGotKeydown: function (event) {
+
     switch (event.keyCode) {
       case 38:
         // if advanced is empty, close it up.
@@ -422,6 +453,7 @@ var SearchBar = React.createClass({
       repos = [];
     }
     console.log('getPrams ', repos)
+    console.log('getPrams2 ', this.refs.repos.state.value)
     return {
       q: this.refs.q.getDOMNode().value.trim(),
       files: this.refs.files.getDOMNode().value.trim(),
@@ -482,15 +514,31 @@ var SearchBar = React.createClass({
     q.focus();
   },
   render: function () {
+    console.log('initial buildup', this.state)
+
     var repoCount = this.state.allRepos.length,
       repoOptions = [],
-      selected = {};
+      selected = { };
 
-    this.state.repos.forEach(function (repo) {
-      selected[repo] = true;
-    });
+    if (this.state.defaultRepos != undefined) {
+
+      this.state.repos.forEach(function (repo) {
+        selected[repo] = false;
+      });
+
+      this.state.defaultRepos.forEach(function (repo) {
+        selected[repo] = true;
+      });
+
+    } else {
+      this.state.repos.forEach(function (repo) {
+        selected[repo] = true;
+      });
+    }
+
 
     this.state.allRepos.forEach(function (repoName) {
+      console.log('push: ' , repoName)
       repoOptions.push(<RepoOption value={repoName} selected={selected[repoName]} />);
     });
 
@@ -915,6 +963,11 @@ var App = React.createClass({
   },
   onSearchRequested: function (params) {
     this.updateHistory(params);
+    console.log('---onSearchRequested BEGIN')
+    console.log(params)
+    console.log(this.refs.searchBar.getParams())
+    console.log('---onSearchRequested END')
+
     Model.Search(this.refs.searchBar.getParams());
   },
   updateHistory: function (params) {
