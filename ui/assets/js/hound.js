@@ -80,8 +80,6 @@ var ParamsFromUrl = function (params) {
     async: false,
     dataType: 'json',
     success: function (data) {
-      console.log(data.defaultRepos);
-
       params = params || {
         q: '',
         i: 'nope',
@@ -89,8 +87,6 @@ var ParamsFromUrl = function (params) {
         repos: data.defaultRepos,
         ctx: '2'
       };
-
-
 
     },
     error: function (xhr, status, err) {
@@ -107,7 +103,6 @@ var ParamsFromUrl = function (params) {
     }
   });
 
-  console.log('..... params: ' , params);
   return ParamsFromQueryString(location.search, params);
 };
 
@@ -138,23 +133,12 @@ var Model = {
   ValidRepos: function (repos) {
     var all = this.repos,
       seen = {};
-    console.log('Valid Repos ------------Begin');
-    console.log('this: ', this);
-
-    console.log('repos parameters: ', repos);
-    console.log('all: ', all);
-    console.log('seen: ', seen);
-
     var valid = repos.filter(function (repo) {
       var valid = all[repo] && !seen[repo];
       seen[repo] = true;
       return valid;
     });
-
-    console.log('seen after: ', seen);
-    console.log('seen valid: ', valid);
-    console.log('Valid Repos ------------End');
-    return valid;
+  return valid;
   },
 
   RepoCount: function () {
@@ -448,12 +432,16 @@ var SearchBar = React.createClass({
   getParams: function () {
     // selecting all repos is the same as not selecting any, so normalize the url
     // to have none.
-    var repos = Model.ValidRepos(this.refs.repos.state.value);
+    var repos = this.refs.repos.state.value;
+    if (repos.length == 0) {
+      if (this.state.defaultRepos.length != 0) {
+        repos = this.state.defaultRepos;
+      }
+    }
+    var repos = Model.ValidRepos(repos);
     if (repos.length == Model.RepoCount()) {
       repos = [];
     }
-    console.log('getPrams ', repos)
-    console.log('getPrams2 ', this.refs.repos.state.value)
     return {
       q: this.refs.q.getDOMNode().value.trim(),
       files: this.refs.files.getDOMNode().value.trim(),
@@ -474,8 +462,6 @@ var SearchBar = React.createClass({
     files.value = params.files;
     ctx.value=params.ctx;
     repos.value=params.repos;
-    console.log('setParams: repos.value=' , repos.value)
-    console.log('setParams: repos.value=' , params.repos)
   },
   hasAdvancedValues: function () {
     return this.refs.files.getDOMNode().value.trim() !== '' || this.refs.icase.getDOMNode().checked || this.refs.repos.getDOMNode().value !== '';
@@ -514,8 +500,6 @@ var SearchBar = React.createClass({
     q.focus();
   },
   render: function () {
-    console.log('initial buildup', this.state)
-
     var repoCount = this.state.allRepos.length,
       repoOptions = [],
       selected = { };
@@ -538,7 +522,6 @@ var SearchBar = React.createClass({
 
 
     this.state.allRepos.forEach(function (repoName) {
-      console.log('push: ' , repoName)
       repoOptions.push(<RepoOption value={repoName} selected={selected[repoName]} />);
     });
 
@@ -963,11 +946,6 @@ var App = React.createClass({
   },
   onSearchRequested: function (params) {
     this.updateHistory(params);
-    console.log('---onSearchRequested BEGIN')
-    console.log(params)
-    console.log(this.refs.searchBar.getParams())
-    console.log('---onSearchRequested END')
-
     Model.Search(this.refs.searchBar.getParams());
   },
   updateHistory: function (params) {
